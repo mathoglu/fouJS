@@ -1,4 +1,4 @@
-import {validation} from './validation.js';
+import validation from './validation.js';
 
 let hann = (size)=> {
 		validation.addRules({
