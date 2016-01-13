@@ -54,7 +54,7 @@ let blackman = (size)=> {
 		return (i)=> { return table[i] };
 	};
 
-let bartlett = ()=> {
+let bartlett = (size)=> {
 	validation.addRules({
 		size: 'int'
 	})({size: size});
