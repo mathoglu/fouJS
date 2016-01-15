@@ -10,11 +10,15 @@ let loop = (opts) => {
 			hopSize: 			'int',
 			process:			'func',
 			done:				'func'
+		},
+		{
+
 		}
 	)(opts);
 
 	return ()=> {
-		let start = 0;
+		let start = 0,
+			all = [];
 		while ( opts.signal.length > start ) {
 			let s;
 			if (opts.signal.length < start + opts.N) {
@@ -24,12 +28,13 @@ let loop = (opts) => {
 				}
 			}
 			else {
-				s = opts.signal.subarray(start, opts.N)
+				s = opts.signal.subarray(start, start+opts.N)
 			}
 			opts.process( s );
+			all.push(s);
 			start += (opts.N - opts.hopSize);
 		}
-		opts.done();
+		opts.done( all );
 	}
 };
 

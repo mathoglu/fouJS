@@ -62,10 +62,10 @@ let bartlett = (size)=> {
 	let table = new Float32Array(size);
 
 	for(let i = 0; i < size/2; i++) {
-		table[i] = 2*n / size;
+		table[i] = 2*i / size;
 	}
 	for(let i = size/2 ;i < size; i++) {
-		table[i] = 2 - ( 2*n / size);
+		table[i] = 2 - ( 2*i / size);
 	}
 
 	return (i)=> { return table[i] };

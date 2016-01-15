@@ -1,4 +1,4 @@
-let db = (x, type)=> {
+let db = (x)=> {
 	return 10*Math.log(x);
 };
 
@@ -8,7 +8,8 @@ let type = {
 	isObject: (obj) => { return obj !== null && typeof obj === 'object' && !Array.isArray(obj) },
 	isEmpty: (obj) => { return Object.keys(obj).length == 0 },
 	isString: (s)=> { return typeof s === 'string' },
-	isArray: (a)=> { return Array.isArray(a) }
+	isArray: (a)=> { return Array.isArray(a) },
+	isFloat(f){ return f === Number(f) && f % 1 !== 0; }
 };
 
 let sqrt = Math.sqrt,

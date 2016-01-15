@@ -4,15 +4,15 @@ let validate = validation.addRules(
 		{
 			length: 			'int',
 			freq: 				'int',
-			amp:				'int',
+			amp:				'float',
 			Fs: 				'int',
 			type:				null
 		}
 	),
 	TwoPi = Math.PI * 2,
 	TYPES = {
-		SINE: (step) => { return Math.sin(TwoPi * step) },
-		SAW: (step) => {  },
+		SINE: (step, a) => { return a*Math.sin(TwoPi * step) },
+		SAW: (step) => { },
 		SQUARE: (step) => {},
 		TRIANGLE: (step) => {}
 	},
@@ -22,12 +22,12 @@ let validate = validation.addRules(
 		validate(opts);
 
 		let N = opts.length * opts.Fs,
-			fq = 1 / (opts.freq / opts.Fs), // frequency described in 1/samples, i.e. period length in samples
+			fq = 1 / (opts.Fs / opts.freq), // frequency described in 1/samples, i.e. period length in samples
 			generator = TYPES[opts.type.toUpperCase()],
 			x = new Float32Array(N);
 
 		for(let i = 0; i < x.length; i++) {
-			x[i] = generator(i * fq) * opts.amp;
+			x[i] = generator(i * fq, opts.amp) * opts.amp;
 		}
 
 		return x;
