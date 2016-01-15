@@ -11,6 +11,10 @@ let standardValidators = {
 	},
 	addRules = (required, optional)=> {
 
+		if(type.isUndefined(optional)) {
+			optional = {};
+		}
+
 		// check for empty input
 		if( type.isUndefined(required) || !type.isObject(required)) {
 			throw new Error('Inputted specification is not object.');

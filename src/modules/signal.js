@@ -11,10 +11,10 @@ let validate = validation.addRules(
 	),
 	TwoPi = Math.PI * 2,
 	TYPES = {
-		SINE: (step, a) => { return a*Math.sin(TwoPi * step) },
-		SAW: (step) => { },
-		SQUARE: (step) => {},
-		TRIANGLE: (step) => {}
+		SINE: (step) => { return Math.sin(TwoPi * step) },
+		SAW: (step) => { return 2 * (step - Math.round(step)) },
+		SQUARE: (step) => { return step < 0.5 ? 1 : -1 },
+		TRIANGLE: (step) => { return 1 - 4 * Math.abs(Math.round(step) - step) }
 	},
 	signal = (opts)=> {
 
@@ -22,12 +22,12 @@ let validate = validation.addRules(
 		validate(opts);
 
 		let N = opts.length * opts.Fs,
-			fq = 1 / (opts.Fs / opts.freq), // frequency described in 1/samples, i.e. period length in samples
+			Ts = (opts.Fs / opts.freq), // period length in samples
 			generator = TYPES[opts.type.toUpperCase()],
 			x = new Float32Array(N);
 
 		for(let i = 0; i < x.length; i++) {
-			x[i] = generator(i * fq, opts.amp) * opts.amp;
+			x[i] = generator((i % Ts)/Ts) * opts.amp;
 		}
 
 		return x;
