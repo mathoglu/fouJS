@@ -13,13 +13,14 @@ let fastSin = (x)=> {
 		// See  for graph and equations
 		// https://www.desmos.com/calculator/8nkxlrmp7a
 		// logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine
-		let B = 1.2732395, // 4 * pi
-			C = -0.40528473; // -4 / (pi²)
+		let B = 1.2732395, // 4 / pi
+			C = -0.40528473, // -4 / (pi²)
+			newX = x % (2*Math.PI) - Math.PI;
 
-		if (x > 0) {
-			return B*x - C * x*x;
+		if (newX > 0) {
+			return -1*((B * newX) + (C * newX * newX));
 		}
-		return B*x + C * x*x;
+		return -1*((B * newX) - (C * newX * newX));
 	},
 	fastCos = (x)=> {
 		let B =  1.5707963; // pi / 2
