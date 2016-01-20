@@ -15,13 +15,16 @@ let standardValidators = {
 			optional = {};
 		}
 
-		// check for empty input
-		if( type.isUndefined(required) || !type.isObject(required)) {
+		if(type.isUndefined(required)) {
+			required = {};
+		}
+
+		if( !type.isObject(optional) || !type.isObject(required)) {
 			throw new Error('Inputted specification is not object.');
 		}
 
-		if( type.isEmpty(required) ) {
-			throw new Error('Inputted empty specification object.');
+		if( type.isEmpty(required) && type.isEmpty(optional) ) {
+			throw new Error('Both inputted specification objects are empty?.');
 		}
 
 		let _validate = (option, value, func)=> {
@@ -29,33 +32,30 @@ let standardValidators = {
 					throw new Error('No validator for "' + option + '" found.');
 				}
 				if (!func(value)) {
-					throw new Error('Input for "' + option + '" is not valid. Value:', value);
+					throw new Error('Input for "' + option + '" is not valid. Value: ' + value);
 				}
 			},
-			validateOption = (current, value)=> {
-				if(type.isArray(current)) {
-					let what,
-						validator;
+			validateOption = (option, validator, value)=> {
+				if(type.isArray(validator)) {
+					let validatorFunc;
 
-					for(let j = 0; j < current.length; j++) {
-						let currType = current[j];
-						if(type.isString(currType)) {
-							validator = standardValidators[currType];
-							what = current;
+					for(let j = 0; j < validator.length; j++) {
+						let val = validator[j];
+						if(type.isString(val)) {
+							validatorFunc = standardValidators[val];
 						}
-						else if(type.isFunction(currType)) {
-							validator = currType;
-							what = 'user inputted function';
+						else if(type.isFunction(val)) {
+							validatorFunc = val;
 						}
 
-						_validate(what, value, validator);
+						_validate(option, value, validatorFunc);
 					}
 				}
-				else if(type.isString(current)) {
-					_validate(current, value, standardValidators[current]);
+				else if(type.isString(validator)) {
+					_validate(option, value, standardValidators[validator]);
 				}
-				else if(type.isFunction(current)){
-					_validate('user inputted function', value, current)
+				else if(type.isFunction(validator)){
+					_validate(option, value, validator)
 				}
 			};
 
@@ -73,7 +73,7 @@ let standardValidators = {
 				}
 
 				else {
-					validateOption(required[opt], value)
+					validateOption(opt, required[opt], value)
 				}
 			}
 
@@ -84,7 +84,7 @@ let standardValidators = {
 					value = opts[opt];
 
 				if(!type.isUndefined(value)) {
-					validateOption(optional[opt], value)
+					validateOption(opt, optional[opt], value)
 				}
 			}
 		}

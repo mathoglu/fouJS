@@ -1,4 +1,5 @@
 import validation from './validation.js';
+import {fastTrigonometric} from './utils.js';
 
 let validate = validation.addRules(
 		{
@@ -10,8 +11,9 @@ let validate = validation.addRules(
 		}
 	),
 	TwoPi = Math.PI * 2,
+	sin = fastTrigonometric.sin,
 	TYPES = {
-		SINE: (step) => { return Math.sin(TwoPi * step) },
+		SINE: (step) => { return sin(TwoPi * step) },
 		SAW: (step) => { return 2 * (step - Math.round(step)) },
 		SQUARE: (step) => { return step < 0.5 ? 1 : -1 },
 		TRIANGLE: (step) => { return 1 - 4 * Math.abs(Math.round(step) - step) }

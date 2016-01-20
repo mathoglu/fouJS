@@ -1,40 +1,54 @@
 import validation from './validation.js';
+import {type} from './utils.js';
 
 let loop = (opts) => {
 
 	// Validate opts
 	validation.addRules(
 		{
-			signal: 			null,
+			signal: (s)=> {
+				if(s.length == 0) { return false; }
+				return true;
+			},
 			N: 					'int',
-			hopSize: 			'int',
-			process:			'func',
-			done:				'func'
+			process:			'func'
 		},
 		{
-
+			hopSize: 			'int',
+			done:				'func'
 		}
 	)(opts);
 
+	if(type.isUndefined(opts.hopSize)) {
+		opts.hopSize = 0;
+	}
+
+	if(type.isUndefined(opts.done)) {
+		opts.done = ()=> {};
+	}
+
 	return ()=> {
 		let start = 0,
-			all = [];
-		while ( opts.signal.length > start ) {
+			all = [],
+			{signal, N, hopSize, done, process } = opts,
+			signalLength = signal.length;
+
+		while ( signalLength > start ) {
 			let s;
-			if (opts.signal.length < start + opts.N) {
-				s = new Float32Array(opts.N);
-				for(let j = start; j < opts.signal.length; j++) {
-					s[j-start] = opts.signal[j]
+			if (signalLength < start + N) {
+				s = new Float32Array(N);
+				for(let j = start; j < signalLength; j++) {
+					s[j-start] = signal[j]
 				}
 			}
 			else {
-				s = opts.signal.subarray(start, start+opts.N)
+				s = signal.subarray(start, start+N)
 			}
-			opts.process( s );
+			process( s );
 			all.push(s);
-			start += (opts.N - opts.hopSize);
+			start += (N - hopSize);
 		}
-		opts.done( all );
+		done( all );
 	}
 };
 

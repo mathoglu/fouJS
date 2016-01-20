@@ -17,14 +17,15 @@ let fft = (opts)=> {
 
 	validate(opts);
 
-	let sin = trigonometric.sin,
-		cos = trigonometric.cos;
-
 	let fftFunc = (input)=> {
-		let N = input.length;
+		let N = input.length,
+			sin = trigonometric.sin,
+			cos = trigonometric.cos,
+			{multiply, add, subtract} = complex,
+			windowFunc = opts.windowFunc;
 
 		if(N == 1) {
-			return [{r: opts.windowFunc(0)*input[0], i: 0}];
+			return [{r: windowFunc(0)*input[0], i: 0}];
 		}
 		else {
 			let {even, odd} = splitEvenOdd(input),
@@ -36,10 +37,10 @@ let fft = (opts)=> {
 
 			for (let i = 0; i < N / 2; i++) {
 				t = inputEven[i];
-				e = complex.multiply({r: cos(i, N), i: sin(i, N)}, inputOdd[i]);
+				e = multiply({r: cos(i, N), i: sin(i, N)}, inputOdd[i]);
 
-				output[i] = complex.add(t, e);
-				output[i + (N / 2)] = complex.subtract(t, e);
+				output[i] = add(t, e);
+				output[i + (N / 2)] = subtract(t, e);
 			}
 			return output;
 		}
