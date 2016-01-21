@@ -4,6 +4,7 @@ let standardValidators = {
 		int: (i)=> { return i === parseInt(i, 10); },
 		func: type.isFunction,
 		float: type.isFloat,
+		bool: type.isBoolean,
 		powerOfTwo: (i)=> {
 			let exp = Math.log(i) / Math.LN2;
 			return exp === parseInt(exp, 10);

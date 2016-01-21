@@ -15,12 +15,17 @@ let loop = (opts) => {
 		},
 		{
 			hopSize: 			'int',
-			done:				'func'
+			done:				'func',
+			async: 				'bool'
 		}
 	)(opts);
 
 	if(type.isUndefined(opts.hopSize)) {
 		opts.hopSize = 0;
+	}
+
+	if(type.isUndefined(opts.async)) {
+		opts.async = false;
 	}
 
 	if(type.isUndefined(opts.done)) {
@@ -30,8 +35,23 @@ let loop = (opts) => {
 	return ()=> {
 		let start = 0,
 			all = [],
-			{signal, N, hopSize, done, process } = opts,
+			{signal, N, hopSize, done, process, async } = opts,
 			signalLength = signal.length;
+
+		let callback;
+		if(async) {
+			callback = (s)=> {
+				setTimeout(
+					()=> {
+						process(s)
+					},
+					0
+				)
+			}
+		}
+		else {
+			callback = process;
+		}
 
 		while ( signalLength > start ) {
 			let s;
@@ -44,7 +64,9 @@ let loop = (opts) => {
 			else {
 				s = signal.subarray(start, start+N)
 			}
-			process( s );
+
+			callback(s);
+
 			all.push(s);
 			start += (N - hopSize);
 		}

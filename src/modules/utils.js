@@ -6,26 +6,9 @@ let type = {
 	isEmpty: (obj) => { return type.isObject(obj) && Object.keys(obj).length == 0 },
 	isString: (s)=> { return typeof s === 'string' },
 	isArray: (a)=> { return Array.isArray(a) },
-	isFloat: (f)=> { return f === Number(f) && f % 1 !== 0; }
+	isFloat: (f)=> { return f === Number(f) && f % 1 !== 0; },
+	isBoolean: (b)=> { return typeof b === 'boolean'; }
 };
-
-let fastSin = (x)=> {
-		// See  for graph and equations
-		// https://www.desmos.com/calculator/8nkxlrmp7a
-		// logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine
-		let B = 1.2732395, // 4 / pi
-			C = -0.40528473, // -4 / (pi²)
-			newX = x % (2*Math.PI) - Math.PI;
-
-		if (newX > 0) {
-			return -1*((B * newX) + (C * newX * newX));
-		}
-		return -1*((B * newX) - (C * newX * newX));
-	},
-	fastCos = (x)=> {
-		let B =  1.5707963; // pi / 2
-		return fastSin(B - x);
-	};
 
 // Magnitude calculators
 let sqrt = Math.sqrt,
@@ -42,7 +25,7 @@ let table = (type, length, windowSize)=> {
 	let _sin = ( N )=> {
 			let table = new Float32Array( N ),
 				twoPi = Math.PI * 2,
-				sin = fastSin;
+				sin = Math.sin;
 			for (let i = 0; i < N; i++) {
 				table[i] = sin( twoPi * i / windowSize )
 			}
@@ -51,7 +34,7 @@ let table = (type, length, windowSize)=> {
 		_cos = ( N )=> {
 			let table = new Float32Array( N ),
 				twoPi = Math.PI * 2,
-				cos = fastCos;
+				cos = Math.cos;
 			for (let i = 0; i < N; i++) {
 				table[i] = cos( -twoPi * i / windowSize )
 			}
@@ -70,8 +53,8 @@ let table = (type, length, windowSize)=> {
 };
 
 // Trigonometric help functions (used in FFT)
-let sinus = fastSin,
-	cosinus = fastCos,
+let sinus = Math.sin,
+	cosinus = Math.cos,
 	twoPi = Math.PI * 2,
 	trigonometric = {
 		sin: (k, N)=>{ return sinus( -twoPi * (k / N) ) },
@@ -126,9 +109,5 @@ export default {
 	splitEvenOdd,
 	complex,
 	complexArray,
-	trigonometric,
-	fastTrigonometric: {
-		sin: fastSin,
-		cos: fastCos
-	}
+	trigonometric
 }
