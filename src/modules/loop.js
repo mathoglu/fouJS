@@ -11,11 +11,11 @@ let loop = (opts) => {
 				return true;
 			},
 			N: 					'int',
-			process:			'func'
+			onProcess:			'func'
 		},
 		{
 			hopSize: 			'int',
-			done:				'func',
+			onProcessDone:		'func',
 			async: 				'bool'
 		}
 	)(opts);
@@ -28,31 +28,43 @@ let loop = (opts) => {
 		opts.async = false;
 	}
 
-	if(type.isUndefined(opts.done)) {
-		opts.done = ()=> {};
+	if(type.isUndefined(opts.onProcessDone)) {
+		opts.onProcessDone = ()=> {};
 	}
 
+	// return start function
 	return ()=> {
 		let start = 0,
 			all = [],
-			{signal, N, hopSize, done, process, async } = opts,
+			{signal, N, hopSize, onProcessDone, onProcess, async } = opts,
 			signalLength = signal.length;
 
-		let callback;
+		// Make callbacks async or not
+		let doneCallback, progressCallback;
 		if(async) {
-			callback = (s)=> {
+			progressCallback = (s)=> {
 				setTimeout(
 					()=> {
-						process(s)
+						onProcess(s)
 					},
 					0
 				)
-			}
+			};
+			doneCallback = (all)=> {
+				setTimeout(
+					()=> {
+						onProcessDone(all)
+					},
+					0
+				)
+			};
 		}
 		else {
-			callback = process;
+			doneCallback = onProcessDone;
+			progressCallback = onProcess;
 		}
 
+		// start loop
 		while ( signalLength > start ) {
 			let s;
 			if (signalLength < start + N) {
@@ -65,12 +77,12 @@ let loop = (opts) => {
 				s = signal.subarray(start, start+N)
 			}
 
-			callback(s);
+			progressCallback(s);
 
 			all.push(s);
 			start += (N - hopSize);
 		}
-		done( all );
+		doneCallback( all );
 	}
 };
 

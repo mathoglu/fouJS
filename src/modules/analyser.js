@@ -1,4 +1,5 @@
 import validation from './validation.js';
+import {type} from './utils.js'
 
 let analyser = (opts)=> {
 
@@ -6,39 +7,49 @@ let analyser = (opts)=> {
 	validation.addRules(
 		{
 			N: 					'int',
-			hopSize: 			'int',
-			transformFunction: 	'func'
+			hopSize: 			['int', (value)=> { return value > 0 && value <= opts.N; }],
+			onProcess: 			'func'
 		}
 	)(opts);
 
-	let bufferStore,
-		start = 0,
-		N = opts.N;
-
 	const hopSize = opts.hopSize,
-		tFunc = opts.transformFunction;
+		N = opts.N,
+		bufferStore = new Float32Array(2*N); // store two consecutive frames
+
+	let isFirst = true,
+		start = hopSize;
 
 	return (input)=> {
-		// first run
-		if(typeof bufferStore === 'undefined') {
-			// Initialize as max size
-			bufferStore = new Float32Array(N + hopSize);
-
-			// set to only contain what is needed to next iteration
-			bufferStore.set(input.subarray(N - hopSize, N), 0);
+		let tFunc = opts.onProcess;
+		// first run, use first frame
+		if(isFirst || hopSize === N) {
+			if(isFirst) {
+				bufferStore.set(input, 0);
+				isFirst = false;
+			}
 
 			return tFunc(input);
 		}
-		// Concat input with buffer store
-		bufferStore.set(input, hopSize);
 
-		// Slice out what is needed for this analysis iteration
-		let data = bufferStore.subarray(start, opts.N);
+		// Concat second (current) frame with buffer store
+		bufferStore.set(input, N);
 
-		// Remove used data
-		bufferStore.set(bufferStore.subarray(N - hopSize, bufferStore.length), 0);
+		let data = [],
+			bufferStoreLength = bufferStore.length;
 
-		return tFunc(data);
+		// loop through all frames that fit into the current buffer store
+		while(start <= bufferStoreLength) {
+			let frame = bufferStore.subarray(start, start+N);
+			data.push( tFunc(frame) );
+			start += hopSize;
+		}
+
+		// remove used data by moving second frame in buffer to beginning of array
+		bufferStore.set(bufferStore.subarray(N, 2*N), 0);
+		start -= N;
+
+
+		return data;
 	};
 };
 

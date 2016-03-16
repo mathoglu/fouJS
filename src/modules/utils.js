@@ -1,9 +1,9 @@
 // Type checks
-let type = {
+let types = {
 	isFunction: (f)=> { return typeof f === 'function'; },
 	isUndefined: (u) => { return typeof u == 'undefined' },
 	isObject: (obj) => { return obj !== null && typeof obj === 'object' && !Array.isArray(obj) },
-	isEmpty: (obj) => { return type.isObject(obj) && Object.keys(obj).length == 0 },
+	isEmpty: (obj) => { return types.isObject(obj) && Object.keys(obj).length == 0 },
 	isString: (s)=> { return typeof s === 'string' },
 	isArray: (a)=> { return Array.isArray(a) },
 	isFloat: (f)=> { return f === Number(f) && f % 1 !== 0; },
@@ -20,14 +20,18 @@ let sqrt = Math.sqrt,
 	};
 
 // Table generation
-let table = (type, length, windowSize)=> {
+let table = (type, length, periodLength)=> {
+
+	if(types.isUndefined(periodLength)) {
+		periodLength = length;
+	}
 
 	let _sin = ( N )=> {
 			let table = new Float32Array( N ),
 				twoPi = Math.PI * 2,
 				sin = Math.sin;
 			for (let i = 0; i < N; i++) {
-				table[i] = sin( twoPi * i / windowSize )
+				table[i] = sin( twoPi * i / periodLength )
 			}
 			return table
 		},
@@ -36,7 +40,40 @@ let table = (type, length, windowSize)=> {
 				twoPi = Math.PI * 2,
 				cos = Math.cos;
 			for (let i = 0; i < N; i++) {
-				table[i] = cos( -twoPi * i / windowSize )
+				table[i] = cos( -twoPi * i / periodLength )
+			}
+			return table
+		},
+		_reverse = ( N )=> {
+			let table = new Uint32Array(N),
+				top = 1,
+				add = N >> 1;
+
+			while (top < N) {
+				for (let i = 0; i < top; i++) {
+					table[i + top] = table[i] + add;
+				}
+
+				top = top << 1;
+				add = add >> 1;
+			}
+			return table;
+		},
+		_varCos = ( N )=> {
+			let table = new Float32Array( N ),
+				Pi = Math.PI,
+				cos = Math.cos;
+			for (let i = 0; i < N; i++) {
+				table[i] = cos( -Pi / i )
+			}
+			return table
+		},
+		_varSin = ( N )=> {
+			let table = new Float32Array( N ),
+				Pi = Math.PI,
+				cos = Math.sin;
+			for (let i = 0; i < N; i++) {
+				table[i] = cos( -Pi / i )
 			}
 			return table
 		};
@@ -44,70 +81,26 @@ let table = (type, length, windowSize)=> {
 	if(type === 'sin') {
 		return _sin(length);
 	}
+	else if (type === 'variableSin') {
+		return _varSin(length);
+	}
 	else if (type === 'cos') {
 		return _cos(length);
+	}
+	else if (type === 'variableCos') {
+		return _varCos(length);
+	}
+	else if (type === 'reverseBit') {
+		return _reverse(length);
 	}
 	else {
 		return [];
 	}
 };
 
-// Trigonometric help functions (used in FFT)
-let sinus = Math.sin,
-	cosinus = Math.cos,
-	twoPi = Math.PI * 2,
-	trigonometric = {
-		sin: (k, N)=>{ return sinus( -twoPi * (k / N) ) },
-		cos: (k, N)=> { return cosinus( -twoPi * (k / N) ) }
-	};
-
-// Split array in even and odd parts
-let splitEvenOdd = (array)=> {
-	let even = [],
-		odd = [];
-
-	for(let i = 0; i < array.length; i++) {
-		if((i+2) % 2 == 0) {
-			even.push(array[i])
-		}
-		else {
-			odd.push(array[i])
-		}
-	}
-	return {even: even, odd: odd}
-};
-
-
-// Help functions for complex numbers
-let complex = {
-	add: (a, b)=> { return { r: a.r + b.r, i: a.i + b.i  } },
-	subtract: (a, b)=> { return { r: a.r - b.r, i: a.i - b.i  } },
-	multiply: (a, b)=> {
-		return {
-			r: (a.r * b.r - a.i * b.i),
-			i: (a.r * b.i + a.i * b.r)
-		}
-	}
-};
-
-let complexArray = {
-	add: (a, b)=> { return [(a[0] + b[0]),(a[1] + b[1]) ] },
-	subtract: (a, b)=> { return [a[0] - b[0], a[1] - b[1] ] },
-	multiply: (a, b)=> {
-		return [
-			(a[0] * b[0] - a[1] * b[1]),
-			(a[0] * b[1] + a[1] * b[0])
-		]
-	}
-};
-
 export default {
-	type,
+	type: types,
 	db,
 	mag,
-	table,
-	splitEvenOdd,
-	complex,
-	complexArray,
-	trigonometric
+	table
 }
