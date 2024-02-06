@@ -107,3 +107,54 @@ export const table = (
         return new Float32Array(0);
     }
 };
+
+export const trigonometric = {
+    sin: (k: number, N: number) => {
+        return Math.sin(-(Math.PI * 2) * (k / N));
+    },
+    cos: (k: number, N: number) => {
+        return Math.cos(-(Math.PI * 2) * (k / N));
+    },
+};
+
+export const splitEvenOdd = (
+    array: Float32Array,
+): { even: Float32Array; odd: Float32Array } => {
+    const even = new Float32Array(Math.ceil(array.length / 2)),
+        odd = new Float32Array(Math.ceil(array.length / 2));
+
+    for (let i = 0; i < array.length; i++) {
+        if ((i + 2) % 2 == 0) {
+            even[i / 2] = array[i];
+        } else {
+            odd[(i - 1) / 2] = array[i];
+        }
+    }
+    return { even: even, odd: odd };
+};
+
+export const complex = {
+    add: (a: ImaginaryPoint, b: ImaginaryPoint): ImaginaryPoint => {
+        return { r: a.r + b.r, i: a.i + b.i };
+    },
+    subtract: (a: ImaginaryPoint, b: ImaginaryPoint): ImaginaryPoint => {
+        return { r: a.r - b.r, i: a.i - b.i };
+    },
+    multiply: (a: ImaginaryPoint, b: ImaginaryPoint): ImaginaryPoint => {
+        return {
+            r: a.r * b.r - a.i * b.i,
+            i: a.r * b.i + a.i * b.r,
+        };
+    },
+    magnitude: (point: ImaginaryPoint) => {
+        return Math.sqrt(point.r * point.r + point.i * point.i);
+    },
+};
+
+export const freqForBin = (
+    sampleRate: number,
+    windowSize: number,
+    binNr: number,
+) => {
+    return (sampleRate / windowSize) * binNr;
+};

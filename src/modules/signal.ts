@@ -1,59 +1,56 @@
 import { Validator } from "./utils";
 import { addRules } from "./validation";
 
-const TYPES = {
-    SINE: (step: number) => {
+const waveTypes = {
+    sine: (step: number) => {
         return Math.sin(Math.PI * 2 * step);
     },
-    SAW: (step: number) => {
+    saw: (step: number) => {
         return 2 * (step - Math.round(step));
     },
-    SQUARE: (step: number) => {
+    square: (step: number) => {
         return step < 0.5 ? 1 : -1;
     },
-    TRIANGLE: (step: number) => {
+    triangle: (step: number) => {
         return 1 - 4 * Math.abs(Math.round(step) - step);
     },
-    RANDOM: () => {
+    random: () => {
         return Math.random();
     },
 };
 
-const validate = addRules({
-    length: "float",
-    freq: "int",
-    amp: "float",
-    Fs: "int",
+type SignalOptions = {
+    length: number; // In seconds
+    freq: number; // Wave period in herz
+    sampleRate: number; // Sampling rate in herz
+    type: keyof typeof waveTypes;
+    amplitude?: number; // Arbitary number
+};
+
+const validate = addRules<SignalOptions>({
+    length: ["float", "required"],
+    freq: ["int", "required"],
+    sampleRate: ["int", "required"],
+    amplitude: ["int"],
     type: [
         ((value: string) => {
-            return Object.keys(TYPES).indexOf(value.toUpperCase()) > -1;
+            return Object.keys(waveTypes).indexOf(value) > -1;
         }) as Validator,
     ],
 });
 
-type SignalRequiredOptions = {
-    length: number;
-    freq: number;
-    amp: number;
-    Fs: number;
-    type: keyof typeof TYPES;
-};
-// eslint-disable-next-line @typescript-eslint/ban-types
-type SignalOptionalOptions = {};
-
-export function signal(
-    opts: SignalRequiredOptions & Partial<SignalOptionalOptions>,
-) {
+export function signal(opts: SignalOptions) {
     // Validate opts
     validate(opts);
 
-    const N = opts.length * opts.Fs,
-        Ts = opts.Fs / opts.freq, // period length in samples
-        generator = TYPES[opts.type],
+    const { length, sampleRate, freq, amplitude = 1 } = opts;
+    const N = length * sampleRate,
+        Ts = sampleRate / freq, // period length in samples
+        generator = waveTypes[opts.type],
         x = new Float32Array(N);
 
     for (let i = 0; i < x.length; i++) {
-        x[i] = generator((i % Ts) / Ts) * opts.amp;
+        x[i] = generator((i % Ts) / Ts) * amplitude;
     }
 
     return x;

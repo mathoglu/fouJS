@@ -1,64 +1,57 @@
 import { Validator } from "./utils";
 import { addRules } from "./validation";
 
-export type AnalyserRequiredOptions = {
-    N: number;
-    hopSize: number;
-    onProcess: (data: Float32Array) => Float32Array;
+export type AnalyserOptions<O> = {
+    windowSize: number; // in samples
+    hopSize?: number;
+    processor: (data: Float32Array) => O;
 };
-// eslint-disable-next-line @typescript-eslint/ban-types
-export type AnalyserOptionalOptions = {};
-type AnalyserFunction = (input: Float32Array) => Float32Array[];
+type AnalyserFunction<O> = (input: Float32Array) => O;
 
-function analyser(opts: AnalyserRequiredOptions): AnalyserFunction {
-    // Validate opts
-    addRules<AnalyserRequiredOptions, AnalyserOptionalOptions>({
-        N: "int",
+export function analyser<Output = Float32Array>(
+    opts: AnalyserOptions<Output>,
+): AnalyserFunction<Output> {
+    // // Validate opts
+    addRules<AnalyserOptions<Output>>({
+        windowSize: ["int", "required"],
         hopSize: [
             "int",
             ((value: number): boolean => {
-                return value > 0 && value <= opts.N;
+                return value > -1 && value <= opts.windowSize;
             }) as Validator,
         ],
-        onProcess: "func",
+        processor: ["func", "required"],
     })(opts);
 
-    const hopSize = opts.hopSize;
-    const N = opts.N;
-    const bufferStore = new Float32Array(2 * N); // store two consecutive frames
+    const { windowSize, hopSize = 0, processor } = opts;
+    let bufferStore: Float32Array;
 
-    let isFirst = true;
-    let start = hopSize;
+    return (input: Float32Array): Output => {
+        // first run
+        if (typeof bufferStore === "undefined") {
+            // Initialize as max size
+            bufferStore = new Float32Array(windowSize + hopSize);
 
-    return (input: Float32Array): Float32Array[] => {
-        const tFunc = opts.onProcess;
-        // first run, use first frame
-        if (isFirst || hopSize === N) {
-            if (isFirst) {
-                bufferStore.set(input, 0);
-                isFirst = false;
-            }
+            // set to only contain what is needed to next iteration
+            bufferStore.set(
+                input.subarray(windowSize - hopSize, windowSize),
+                0,
+            );
 
-            return [tFunc(input)];
+            return processor(input);
         }
+        // Concat input with buffer store
+        bufferStore.set(input, hopSize);
 
-        // Concat second (current) frame with buffer store
-        bufferStore.set(input, N);
+        // Slice out what is needed for this analysis iteration
+        const data = bufferStore.subarray(0, windowSize);
 
-        const data: Float32Array[] = [];
+        // Remove used data
+        bufferStore.set(
+            bufferStore.subarray(windowSize - hopSize, bufferStore.length),
+            0,
+        );
 
-        // loop through all frames that fit into the current buffer store
-        while (start <= bufferStore.length) {
-            data.push(tFunc(bufferStore.subarray(start, start + N)));
-            start += hopSize;
-        }
-
-        // remove used data by moving second frame in buffer to beginning of array
-        bufferStore.set(bufferStore.subarray(N, 2 * N), 0);
-        start -= N;
-
-        return data;
+        return processor(data);
     };
 }
-
-export default analyser;

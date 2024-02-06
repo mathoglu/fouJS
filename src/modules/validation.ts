@@ -11,28 +11,20 @@ const standardValidators = {
         const exp = Math.log(i) / Math.LN2;
         return exp === Math.trunc(exp);
     }) as Validator,
+    required: <T>(r: unknown): r is T => typeof r !== "undefined",
 };
-type RuleSet<T extends string | number | symbol> = Record<
-    T,
-    | keyof typeof standardValidators
-    | (keyof typeof standardValidators | ((value: unknown) => boolean))[]
->;
-export function addRules<
-    R extends Record<string, unknown>,
-    O extends Record<string, unknown>,
->(
-    required: RuleSet<keyof R>,
-    optional: RuleSet<keyof O> | null = null,
-): (input: O & R) => void {
-    if (
-        !(optional !== null && type.isObject(optional)) ||
-        !type.isObject(required)
-    ) {
-        throw new Error("Inputted specification is not object.");
+type RuleType = keyof typeof standardValidators | ((value: unknown) => boolean);
+type RuleSet<T extends string | number | symbol> = Record<T, RuleType[]>;
+
+export function addRules<R extends Record<string, unknown>>(
+    rules: RuleSet<keyof R>,
+): (input: R) => void {
+    if (!type.isObject(rules)) {
+        throw new Error("Rules specification is not an object.");
     }
 
-    if (type.isEmpty(required) && type.isEmpty(optional)) {
-        throw new Error("Both inputted specification objects are empty?.");
+    if (type.isEmpty(rules)) {
+        throw new Error("Rules specification is empty.");
     }
 
     const validate = <V>(option: string, value: V, func: Validator) => {
@@ -73,23 +65,28 @@ export function addRules<
     };
 
     // return validation function
-    return (opts: R & O) => {
+    return (opts: R) => {
+        const required = Object.entries(rules).filter(
+            ([, value]) => value.indexOf("required") > 0,
+        );
+        const optional = Object.entries(rules).filter(
+            ([, value]) => value.indexOf("required") < 0,
+        );
         // loop all required options and validate
-
-        Object.entries(required).map(([key, value]) => {
-            if (type.isUndefined(value)) {
+        required.map(([key, ruleDefinitions]) => {
+            if (type.isUndefined(opts[key])) {
                 throw new Error(
                     'Required parameter "' + key + '" not in options object.',
                 );
             } else {
-                validateOption(key, value, opts[key]);
+                validateOption(key, ruleDefinitions, opts[key]);
             }
         });
 
         // loop all optional options and validate if present
-        Object.entries(optional || {}).map(([key, value]) => {
-            if (!type.isUndefined(value)) {
-                validateOption(key, optional[key], value);
+        optional.map(([key, ruleDefinitions]) => {
+            if (!type.isUndefined(opts[key])) {
+                validateOption(key, ruleDefinitions, opts[key]);
             }
         });
     };

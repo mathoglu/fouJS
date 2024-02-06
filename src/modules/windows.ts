@@ -3,7 +3,7 @@ import { addRules } from "./validation";
 export type WindowFunction = (input: number) => number;
 
 const validate = addRules({
-    size: "int",
+    size: ["int"],
 });
 
 export function hann(size: number): WindowFunction {
@@ -12,7 +12,7 @@ export function hann(size: number): WindowFunction {
     const table = new Float32Array(size);
 
     for (let i = 0; i < size; i++) {
-        table[i] = 0.5 * (1 - Math.cos((Math.PI * 2 * i) / size - 1));
+        table[i] = 0.5 * (1 - Math.cos((Math.PI * 2 * i) / (size - 1)));
     }
 
     return i => {

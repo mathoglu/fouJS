@@ -1,46 +1,39 @@
 import { addRules } from "./validation.js";
 import { Validator } from "./utils.js";
 
-type LoopRequiredOptions = {
-    N: number;
-    onProcess: (data: Float32Array) => void;
+type LoopOptions = {
+    windowSize: number;
     signal: Float32Array;
+    hopSize?: number;
+    async?: boolean;
+    onProcess: (data: Float32Array) => void;
+    onProcessDone?: (data: Float32Array[]) => void;
 };
 
-type LoopOptionalOptions = {
-    hopSize: number;
-    async: boolean;
-    onProcessDone: (data: Float32Array[]) => void;
-};
-
-function loop(opts: LoopRequiredOptions & Partial<LoopOptionalOptions>) {
+export function loop(opts: LoopOptions) {
     // Validate opts
-    addRules<LoopRequiredOptions, Partial<LoopOptionalOptions>>(
-        {
-            signal: [
-                ((s: ArrayLike<unknown>) => {
-                    if (s.length == 0) {
-                        return false;
-                    }
-                    return true;
-                }) as Validator,
-            ],
-            N: "int",
-            onProcess: "func",
-        },
-        {
-            hopSize: "int",
-            onProcessDone: "func",
-            async: "bool",
-        },
-    )(opts);
+    addRules<LoopOptions>({
+        signal: [
+            ((s: ArrayLike<unknown>) => {
+                if (s.length == 0) {
+                    return false;
+                }
+                return true;
+            }) as Validator,
+        ],
+        windowSize: ["int", "required"],
+        onProcess: ["func", "required"],
+        hopSize: ["int"],
+        onProcessDone: ["func"],
+        async: ["bool"],
+    })(opts);
 
     // return start function
     return () => {
         const all = [],
             {
                 signal,
-                N,
+                windowSize,
                 hopSize = 0,
                 onProcessDone = () => {},
                 onProcess,
@@ -71,22 +64,20 @@ function loop(opts: LoopRequiredOptions & Partial<LoopOptionalOptions>) {
         // start loop
         while (signalLength > start) {
             let s;
-            if (signalLength < start + N) {
-                s = new Float32Array(N);
+            if (signalLength < start + windowSize) {
+                s = new Float32Array(windowSize);
                 for (let j = start; j < signalLength; j++) {
                     s[j - start] = signal[j];
                 }
             } else {
-                s = signal.subarray(start, start + N);
+                s = signal.subarray(start, start + windowSize);
             }
 
             progressCallback(s);
 
             all.push(s);
-            start += N - hopSize;
+            start += windowSize - hopSize;
         }
         doneCallback(all);
     };
 }
-
-export default loop;

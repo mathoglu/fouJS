@@ -2,23 +2,19 @@ import { addRules } from "./validation";
 import { table, type } from "./utils.js";
 import { type WindowFunction } from "./windows";
 
-const validate = addRules(
-    {
-        N: "int",
-        Fs: "int",
-    },
-    {
-        windowFunc: "func",
-    },
-);
-type DFTRequiredOptions = {
-    N: number;
-    Fs: number;
+type DFTOptions = {
+    windowSize: number;
+    sampleRate: number;
+    windowFunc?: WindowFunction;
 };
-type DFTOptionalOptions = {
-    windowFunc: WindowFunction;
-};
-function dft(opts: DFTRequiredOptions & DFTOptionalOptions) {
+
+const validate = addRules<DFTOptions>({
+    windowSize: ["int", "required"],
+    sampleRate: ["int", "required"],
+    windowFunc: ["func"],
+});
+
+function dft(opts: DFTOptions) {
     validate(opts);
 
     if (type.isUndefined(opts.windowFunc)) {
@@ -27,8 +23,16 @@ function dft(opts: DFTRequiredOptions & DFTOptionalOptions) {
         };
     }
 
-    const sin = table("sin", (opts.N * opts.N) / 2, opts.N),
-        cos = table("cos", (opts.N * opts.N) / 2, opts.N);
+    const sin = table(
+            "sin",
+            (opts.windowSize * opts.windowSize) / 2,
+            opts.windowSize,
+        ),
+        cos = table(
+            "cos",
+            (opts.windowSize * opts.windowSize) / 2,
+            opts.windowSize,
+        );
 
     const dftFunc = (input: ArrayLike<number>) => {
         const output = [],
@@ -41,7 +45,7 @@ function dft(opts: DFTRequiredOptions & DFTOptionalOptions) {
                 });
         let img, real;
 
-        for (let k = 0; k < opts.N / 2; k++) {
+        for (let k = 0; k < opts.windowSize / 2; k++) {
             img = 0.0;
             real = 0.0;
 
