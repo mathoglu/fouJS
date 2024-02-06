@@ -2,17 +2,26 @@
   "name": "fou-js",
   "version": "1.0.0",
   "description": "Library for time to frequency domain transforms",
-  "main": "src/fou.ts",
+  "main": "dist/fou.js",
+  "module": "dist/fou.mjs",
+  "typings": "dist/fou.d.ts",
+  "type": "module",
   "scripts": {
     "start": "",
-    "test": ""
+    "test": "",
+    "build": "rollup -c"
   },
   "author": "Matts Höglund",
   "license": "MIT",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.20.0",
     "@typescript-eslint/parser": "^6.20.0",
+    "esbuild": "^0.20.0",
     "eslint": "^8.56.0",
-    "prettier": "3.2.5"
+    "prettier": "3.2.5",
+    "rollup": "^4.9.6",
+    "rollup-plugin-dts": "^6.1.0",
+    "rollup-plugin-esbuild": "^6.1.1",
+    "typescript": "^5.3.3"
   }
 }
